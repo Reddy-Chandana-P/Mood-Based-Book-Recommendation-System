@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Recommender</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f0e17;
+      color: #fffffe;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header .emoji { font-size: 2.8rem; }
+    header h1 { font-size: 2rem; font-weight: 700; color: #a786ff; margin-top: 0.4rem; }
+    header p { color: #a7a9be; margin-top: 0.5rem; }
+
+    .input-box {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .chip {
+      background: #2a2a4a;
+      color: #fffffe;
+      border: none;
+      border-radius: 20px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+    .chip:hover, .chip.active { background: #6c63ff; }
+
+    .search-row { display: flex; gap: 0.75rem; }
+
+    input[type="text"] {
+      flex: 1;
+      background: #0f0e17;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: #fffffe;
+      font-size: 0.95rem;
+      outline: none;
+      font-family: inherit;
+    }
+    input[type="text"]:focus { border-color: #6c63ff; }
+
+    .btn-primary {
+      background: #6c63ff;
+      color: #fffffe;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #5a52e0; }
+    .btn-primary:disabled { background: #3a3a5a; cursor: not-allowed; }
+
+    #mood-label {
+      text-align: center;
+      color: #a7a9be;
+      margin: 1.2rem 0 0.5rem;
+      font-size: 0.95rem;
+    }
+    #mood-label span { color: #a786ff; font-weight: 600; }
+
+    #error { color: #ff6b6b; text-align: center; margin-top: 1rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.2rem;
+      margin-top: 1.5rem;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); }
+
+    .card-cover {
+      height: 180px;
+      background: linear-gradient(135deg, #6c63ff, #a786ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .card-title { font-size: 1rem; font-weight: 600; line-height: 1.3; }
+    .card-author { font-size: 0.82rem; color: #a7a9be; }
+
+    .stars { color: #ffd700; font-size: 0.8rem; }
+    .rating-num { color: #a7a9be; font-size: 0.75rem; margin-left: 0.3rem; }
+
+    .genre-tag {
+      background: #2a2a4a;
+      color: #a786ff;
+      border-radius: 6px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.72rem;
+      align-self: flex-start;
+    }
+
+    .card-desc { font-size: 0.82rem; color: #a7a9be; line-height: 1.5; margin-top: 0.3rem; }
+
+    .explain-box {
+      background: #0f0e17;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      border-left: 3px solid #6c63ff;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .btn-explain {
+      margin-top: auto;
+      padding-top: 0.75rem;
+      background: transparent;
+      border: 1px solid #6c63ff;
+      border-radius: 8px;
+      color: #a786ff;
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 0.5rem;
+      font-family: inherit;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .btn-explain:hover { background: #2a2a4a; }
+    .btn-explain:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .section-title { font-size: 1.2rem; font-weight: 600; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="emoji">📚</div>
+    <h1>Book Recommender</h1>
+    <p>Tell us how you're feeling and we'll find your next great read</p>
+  </header>
+
+  <div class="input-box">
+    <div class="chips" id="chips"></div>
+    <div class="search-row">
+      <input type="text" id="mood-input" placeholder="Or describe how you're feeling in your own words..." />
+      <button class="btn-primary" id="search-btn" onclick="search()">Find Books ✨</button>
+    </div>
+  </div>
+
+  <div id="error"></div>
+  <div id="mood-label"></div>
+  <div id="results-title"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+  const API = "http://localhost:8000";
+
+  const CHIPS = [
+    { label: "😊 Happy",       value: "I'm feeling happy and want something fun" },
+    { label: "😢 Sad",         value: "I'm feeling sad and need some comfort" },
+    { label: "🌍 Adventurous", value: "I want something adventurous and exciting" },
+    { label: "💕 Romantic",    value: "I'm in a romantic mood" },
+    { label: "🔍 Curious",     value: "I'm curious and want to learn something new" },
+    { label: "😱 Thrilled",    value: "I want something scary and thrilling" },
+    { label: "💪 Motivated",   value: "I need motivation and inspiration" },
+    { label: "😌 Relaxed",     value: "I want something light and relaxing" },
+  ];
+
+  // Render mood chips
+  const chipsEl = document.getElementById("chips");
+  CHIPS.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.textContent = c.label;
+    btn.onclick = () => {
+      document.getElementById("mood-input").value = c.value;
+      document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    };
+    chipsEl.appendChild(btn);
+  });
+
+  async function search() {
+    const text = document.getElementById("mood-input").value.trim();
+    if (!text) return;
+
+    const btn = document.getElementById("search-btn");
+    btn.disabled = true;
+    btn.textContent = "Finding books...";
+    document.getElementById("error").textContent = "";
+    document.getElementById("grid").innerHTML = "";
+    document.getElementById("mood-label").innerHTML = "";
+    document.getElementById("results-title").innerHTML = "";
+
+    try {
+      const res = await fetch(`${API}/recommend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_text: text, top_n: 6 }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+
+      document.getElementById("mood-label").innerHTML =
+        `Detected mood: <span>${data.mood}</span>`;
+      document.getElementById("results-title").innerHTML =
+        `<p class="section-title">Recommended for you</p>`;
+
+      data.books.forEach(book => renderCard(book, text, data.mood));
+    } catch (e) {
+      document.getElementById("error").textContent =
+        "Error: " + (e.message || "Unknown error. Check console (F12) for details.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Find Books ✨";
+    }
+  }
+
+  function renderCard(book, userText, mood) {
+    const stars = Math.round(book.rating);
+    const genre = (book.genre || "").replace(/[\[\]']/g, "").split(",")[0].trim() || "General";
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-cover" ${book.thumbnail ? `style="background-image:url('${book.thumbnail}')"` : ""}>
+        ${book.thumbnail ? "" : "📖"}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${book.title}</div>
+        <div class="card-author">${book.author}</div>
+        <div>
+          <span class="stars">${"★".repeat(stars)}${"☆".repeat(5 - stars)}</span>
+          <span class="rating-num">${book.rating.toFixed(1)}</span>
+        </div>
+        <span class="genre-tag">${genre}</span>
+        <p class="card-desc">${book.description}</p>
+        <div class="explain-box" id="exp-${book.title.replace(/\s/g,'_')}"></div>
+        <button class="btn-explain" onclick="explain(this, ${JSON.stringify(book).replace(/"/g, '&quot;')}, '${userText.replace(/'/g,"\\'")}', '${mood}')">
+          ✨ Why this book?
+        </button>
+      </div>
+    `;
+    document.getElementById("grid").appendChild(card);
+  }
+
+  async function explain(btn, book, userText, mood) {
+    const expId = "exp-" + book.title.replace(/\s/g, '_');
+    const box = document.getElementById(expId);
+
+    if (box.style.display === "block") {
+      box.style.display = "none";
+      btn.textContent = "✨ Why this book?";
+      return;
+    }
+
+    if (box.textContent) {
+      box.style.display = "block";
+      btn.textContent = "Hide explanation";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Asking Gemini...";
+
+    try {
+      const res = await fetch(`${API}/explain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ book, user_text: userText, mood }),
+      });
+      const data = await res.json();
+      box.textContent = "✨ " + data.explanation;
+      box.style.display = "block";
+      btn.textContent = "Hide explanation";
+    } catch {
+      box.textContent = "Could not generate explanation.";
+      box.style.display = "block";
+      btn.textContent = "Hide explanation";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Allow Enter key to search
+  document.getElementById("mood-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") search();
+  });
+</script>
+</body>
+</html>
