@@ -29,6 +29,11 @@ class RecommendRequest(BaseModel):
     top_n: int = 10
     offset: int = 0
 
+class ExplainRequest(BaseModel):
+    book: dict
+    user_text: str
+    mood: str
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

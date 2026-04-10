@@ -4,93 +4,152 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Recommender</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Palette ──────────────────────────────────────────────
+       --bg:        #fdf0f3  pale blush pink background
+       --surface:   #fff5f7  card / panel surface
+       --surface2:  #fce8ed  deeper surface / hover
+       --accent:    #c9637a  rose — primary actions
+       --accent2:   #a0456e  deep rose — hover states
+       --mauve:     #b07a9e  mauve — secondary accents
+       --gold:      #d4956a  warm amber — stars / highlights
+       --text:      #3b2030  deep wine — primary text
+       --muted:     #9a7080  muted rose-grey — secondary text
+       --border:    #f0d0da  soft pink border
+    ──────────────────────────────────────────────────────── */
+
+    :root {
+      --bg:       #fdf0f3;
+      --surface:  #fff5f7;
+      --surface2: #fce8ed;
+      --accent:   #c9637a;
+      --accent2:  #a0456e;
+      --mauve:    #b07a9e;
+      --gold:     #d4956a;
+      --text:     #3b2030;
+      --muted:    #9a7080;
+      --border:   #f0d0da;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
-      background: #0f0e17;
-      color: #fffffe;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       padding: 2rem 1.5rem;
     }
 
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
     .container { max-width: 1100px; margin: 0 auto; }
 
+    /* ── Header ── */
     header { text-align: center; margin-bottom: 2.5rem; }
-    header .emoji { font-size: 2.8rem; }
-    header h1 { font-size: 2rem; font-weight: 700; color: #a786ff; margin-top: 0.4rem; }
-    header p { color: #a7a9be; margin-top: 0.5rem; }
+    header .emoji { font-size: 3rem; }
+    header h1 {
+      font-size: 2.2rem; font-weight: 700;
+      color: var(--accent2);
+      margin-top: 0.4rem;
+      letter-spacing: -0.5px;
+      font-family: 'Playfair Display', serif;
+    }
+    header p { color: var(--muted); margin-top: 0.5rem; font-size: 1rem; }
 
+    /* ── Input box ── */
     .input-box {
-      background: #1a1a2e;
-      border-radius: 16px;
+      background: var(--surface);
+      border-radius: 20px;
       padding: 1.5rem;
       margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(180,80,100,0.07);
     }
 
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.2rem;
-    }
-
-    .chip {
-      background: #2a2a4a;
-      color: #fffffe;
-      border: none;
+    /* ── Moods toggle ── */
+    .btn-moods {
+      background: var(--surface2);
+      color: var(--accent2);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 0.4rem 0.9rem;
+      padding: 0.4rem 1rem;
       cursor: pointer;
       font-size: 0.85rem;
-      transition: background 0.2s;
       font-family: inherit;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      transition: background 0.2s, border-color 0.2s;
     }
-    .chip:hover, .chip.active { background: #6c63ff; }
+    .btn-moods:hover { background: var(--border); border-color: var(--accent); }
 
+    /* ── Chips ── */
+    .chips { display: none; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
+    .chips.open { display: flex; }
+
+    .chip {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .chip:hover { background: var(--border); border-color: var(--accent); }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Search row ── */
     .search-row { display: flex; gap: 0.75rem; }
 
     input[type="text"] {
       flex: 1;
-      background: #0f0e17;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
       padding: 0.75rem 1rem;
-      color: #fffffe;
+      color: var(--text);
       font-size: 0.95rem;
       outline: none;
       font-family: inherit;
+      transition: border-color 0.2s;
     }
-    input[type="text"]:focus { border-color: #6c63ff; }
+    input[type="text"]::placeholder { color: var(--muted); }
+    input[type="text"]:focus { border-color: var(--accent); }
 
     .btn-primary {
-      background: #6c63ff;
-      color: #fffffe;
+      background: var(--accent);
+      color: #fff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 0.75rem 1.5rem;
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
       font-family: inherit;
       white-space: nowrap;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
-    .btn-primary:hover { background: #5a52e0; }
-    .btn-primary:disabled { background: #3a3a5a; cursor: not-allowed; }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
 
+    /* ── Mood label ── */
     #mood-label {
       text-align: center;
-      color: #a7a9be;
+      color: var(--muted);
       margin: 1.2rem 0 0.5rem;
       font-size: 0.95rem;
     }
-    #mood-label span { color: #a786ff; font-weight: 600; }
+    #mood-label span { color: var(--accent2); font-weight: 600; }
 
-    #error { color: #ff6b6b; text-align: center; margin-top: 1rem; }
+    #error { color: #c0392b; text-align: center; margin-top: 1rem; font-size: 0.9rem; }
 
+    /* ── Grid ── */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -98,19 +157,25 @@
       margin-top: 1.5rem;
     }
 
+    /* ── Card ── */
     .card {
-      background: #1a1a2e;
-      border-radius: 14px;
+      background: var(--surface);
+      border-radius: 16px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(180,80,100,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .card:hover { transform: translateY(-4px); }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 28px rgba(180,80,100,0.13);
+    }
 
     .card-cover {
-      height: 180px;
-      background: linear-gradient(135deg, #6c63ff, #a786ff);
+      height: 185px;
+      background: linear-gradient(135deg, var(--accent), var(--mauve));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -121,52 +186,145 @@
 
     .card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
 
-    .card-title { font-size: 1rem; font-weight: 600; line-height: 1.3; }
-    .card-author { font-size: 0.82rem; color: #a7a9be; }
+    .card-title { font-size: 0.98rem; font-weight: 600; line-height: 1.35; color: var(--text); }
+    .card-author { font-size: 0.8rem; color: var(--muted); }
 
-    .stars { color: #ffd700; font-size: 0.8rem; }
-    .rating-num { color: #a7a9be; font-size: 0.75rem; margin-left: 0.3rem; }
+    .stars { color: var(--gold); font-size: 0.8rem; }
+    .rating-num { color: var(--muted); font-size: 0.74rem; margin-left: 0.3rem; }
 
     .genre-tag {
-      background: #2a2a4a;
-      color: #a786ff;
+      background: #fce0e8;
+      color: var(--accent2);
       border-radius: 6px;
-      padding: 0.2rem 0.5rem;
-      font-size: 0.72rem;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.71rem;
+      font-weight: 500;
       align-self: flex-start;
     }
 
-    .card-desc { font-size: 0.82rem; color: #a7a9be; line-height: 1.5; margin-top: 0.3rem; }
+    .card-desc { font-size: 0.81rem; color: var(--muted); line-height: 1.55; margin-top: 0.3rem; }
 
     .explain-box {
-      background: #0f0e17;
+      background: #fff0f3;
       border-radius: 8px;
       padding: 0.75rem;
-      font-size: 0.82rem;
+      font-size: 0.81rem;
       line-height: 1.6;
-      border-left: 3px solid #6c63ff;
+      color: var(--text);
+      border-left: 3px solid var(--accent);
       margin-top: 0.5rem;
       display: none;
     }
 
     .btn-explain {
       margin-top: auto;
-      padding-top: 0.75rem;
       background: transparent;
-      border: 1px solid #6c63ff;
+      border: 1.5px solid var(--border);
       border-radius: 8px;
-      color: #a786ff;
+      color: var(--accent);
       cursor: pointer;
-      font-size: 0.82rem;
+      font-size: 0.81rem;
       padding: 0.5rem;
       font-family: inherit;
-      transition: background 0.2s;
+      font-weight: 500;
+      transition: all 0.2s;
       width: 100%;
     }
-    .btn-explain:hover { background: #2a2a4a; }
+    .btn-explain:hover { background: var(--surface2); border-color: var(--accent); }
     .btn-explain:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .section-title { font-size: 1.2rem; font-weight: 600; margin-top: 2rem; }
+    /* ── Section title ── */
+    .section-title {
+      font-size: 1.15rem; font-weight: 600;
+      margin-top: 2rem; color: var(--text);
+    }
+
+    /* ── Shuffle / Lucky buttons ── */
+    .btn-shuffle {
+      background: var(--surface);
+      color: var(--accent2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0.6rem 1.4rem;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-shuffle:hover { background: var(--surface2); border-color: var(--accent); transform: translateY(-1px); }
+    .btn-shuffle:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(59,32,48,0.55);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 480px;
+      width: 90%;
+      position: relative;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(180,80,100,0.18);
+      animation: popIn 0.25s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.88); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: var(--surface2); border: none;
+      color: var(--muted); font-size: 1rem;
+      cursor: pointer; border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+
+    .modal-cover {
+      width: 100%; height: 200px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--mauve));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 4rem;
+      background-size: cover; background-position: center;
+      margin-bottom: 1.2rem;
+    }
+    .modal-title  { font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.3rem; }
+    .modal-author { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.6rem; }
+    .modal-genre  {
+      background: #fce0e8; color: var(--accent2);
+      border-radius: 6px; padding: 0.2rem 0.6rem;
+      font-size: 0.74rem; font-weight: 500;
+      display: inline-block; margin-bottom: 0.8rem;
+    }
+    .modal-stars  { color: var(--gold); font-size: 0.85rem; margin-bottom: 0.8rem; }
+    .modal-desc   { font-size: 0.84rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+    .modal-explain {
+      background: #fff0f3; border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 0.75rem;
+      font-size: 0.82rem; line-height: 1.6; color: var(--text);
+      margin-bottom: 1rem; display: none;
+    }
+    .modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .modal-actions button { flex: 1; }
   </style>
 </head>
 <body>
@@ -178,6 +336,7 @@
   </header>
 
   <div class="input-box">
+    <button class="btn-moods" id="moods-toggle" onclick="toggleMoods()">🎭 Moods ▾</button>
     <div class="chips" id="chips"></div>
     <div class="search-row">
       <input type="text" id="mood-input" placeholder="Or describe how you're feeling in your own words..." />
@@ -188,11 +347,18 @@
   <div id="error"></div>
   <div id="mood-label"></div>
   <div id="results-title"></div>
+  <div id="shuffle-row" style="display:none; margin-top:1.2rem; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+    <button class="btn-shuffle" id="shuffle-btn" onclick="shuffle()">🔀 Show different books</button>
+    <button class="btn-shuffle" id="lucky-btn" onclick="feelingLucky()">🎲 Just pick one for me</button>
+  </div>
   <div class="grid" id="grid"></div>
 </div>
 
 <script>
   const API = "http://localhost:8000";
+  let currentText = "";
+  let currentMood = "";
+  let currentOffset = 0;
 
   const CHIPS = [
     { label: "😊 Happy",       value: "I'm feeling happy and want something fun" },
@@ -203,7 +369,16 @@
     { label: "😱 Thrilled",    value: "I want something scary and thrilling" },
     { label: "💪 Motivated",   value: "I need motivation and inspiration" },
     { label: "😌 Relaxed",     value: "I want something light and relaxing" },
+    { label: "😰 Anxious",     value: "I'm feeling anxious and overwhelmed" },
+    { label: "🌱 Healing",     value: "I'm healing and need something comforting" },
   ];
+
+  function toggleMoods() {
+    const chips = document.getElementById("chips");
+    const btn   = document.getElementById("moods-toggle");
+    const open  = chips.classList.toggle("open");
+    btn.textContent = open ? "🎭 Moods ▴" : "🎭 Moods ▾";
+  }
 
   // Render mood chips
   const chipsEl = document.getElementById("chips");
@@ -215,6 +390,9 @@
       document.getElementById("mood-input").value = c.value;
       document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
+      // close the panel after picking
+      document.getElementById("chips").classList.remove("open");
+      document.getElementById("moods-toggle").textContent = "🎭 Moods ▾";
     };
     chipsEl.appendChild(btn);
   });
@@ -222,26 +400,40 @@
   async function search() {
     const text = document.getElementById("mood-input").value.trim();
     if (!text) return;
+    currentText   = text;
+    currentOffset = 0;
+    await fetchBooks(text, 0);
+  }
 
+  async function shuffle() {
+    currentOffset += 10;
+    await fetchBooks(currentText, currentOffset);
+  }
+
+  async function fetchBooks(text, offset) {
     const btn = document.getElementById("search-btn");
+    const shuffleBtn = document.getElementById("shuffle-btn");
     btn.disabled = true;
     btn.textContent = "Finding books...";
+    if (shuffleBtn) shuffleBtn.disabled = true;
     document.getElementById("error").textContent = "";
     document.getElementById("grid").innerHTML = "";
     document.getElementById("mood-label").innerHTML = "";
     document.getElementById("results-title").innerHTML = "";
+    document.getElementById("shuffle-row").style.display = "none";
 
     try {
       const res = await fetch(`${API}/recommend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_text: text, top_n: 6 }),
+        body: JSON.stringify({ user_text: text, top_n: 10, offset }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `HTTP ${res.status}`);
       }
       const data = await res.json();
+      currentMood = data.mood;
 
       document.getElementById("mood-label").innerHTML =
         `Detected mood: <span>${data.mood}</span>`;
@@ -249,18 +441,21 @@
         `<p class="section-title">Recommended for you</p>`;
 
       data.books.forEach(book => renderCard(book, text, data.mood));
+      document.getElementById("shuffle-row").style.display = "flex";
     } catch (e) {
       document.getElementById("error").textContent =
         "Error: " + (e.message || "Unknown error. Check console (F12) for details.");
     } finally {
       btn.disabled = false;
       btn.textContent = "Find Books ✨";
+      if (shuffleBtn) shuffleBtn.disabled = false;
     }
   }
 
   function renderCard(book, userText, mood) {
     const stars = Math.round(book.rating);
-    const genre = (book.genre || "").replace(/[\[\]']/g, "").split(",")[0].trim() || "General";
+    const genre = (book.genre || "General").split(",")[0].trim() || "General";
+    const cardId = "card-" + Math.random().toString(36).slice(2);
 
     const card = document.createElement("div");
     card.className = "card";
@@ -269,33 +464,40 @@
         ${book.thumbnail ? "" : "📖"}
       </div>
       <div class="card-body">
-        <div class="card-title">${book.title}</div>
-        <div class="card-author">${book.author}</div>
+        <div class="card-title">${escHtml(book.title)}</div>
+        <div class="card-author">${escHtml(book.author)}</div>
         <div>
-          <span class="stars">${"★".repeat(stars)}${"☆".repeat(5 - stars)}</span>
-          <span class="rating-num">${book.rating.toFixed(1)}</span>
+          <span class="stars">${"★".repeat(Math.min(stars,5))}${"☆".repeat(Math.max(0,5-stars))}</span>
+          <span class="rating-num">${book.rating.toFixed(1)}${book.ratings_count > 0 ? ` · ${book.ratings_count.toLocaleString()} ratings` : ""}</span>
         </div>
-        <span class="genre-tag">${genre}</span>
-        <p class="card-desc">${book.description}</p>
-        <div class="explain-box" id="exp-${book.title.replace(/\s/g,'_')}"></div>
-        <button class="btn-explain" onclick="explain(this, ${JSON.stringify(book).replace(/"/g, '&quot;')}, '${userText.replace(/'/g,"\\'")}', '${mood}')">
-          ✨ Why this book?
-        </button>
+        <span class="genre-tag">${escHtml(genre)}</span>
+        <p class="card-desc">${escHtml(book.description)}</p>
+        <div class="explain-box" id="exp-${cardId}"></div>
+        <button class="btn-explain" id="btn-${cardId}">✨ Why this book?</button>
       </div>
     `;
+
+    card.querySelector(`#btn-${cardId}`).addEventListener("click", () =>
+      explain(cardId, book, userText, mood)
+    );
     document.getElementById("grid").appendChild(card);
   }
 
-  async function explain(btn, book, userText, mood) {
-    const expId = "exp-" + book.title.replace(/\s/g, '_');
-    const box = document.getElementById(expId);
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  async function explain(cardId, book, userText, mood) {
+    const box = document.getElementById("exp-" + cardId);
+    const btn = document.getElementById("btn-" + cardId);
 
     if (box.style.display === "block") {
       box.style.display = "none";
       btn.textContent = "✨ Why this book?";
       return;
     }
-
     if (box.textContent) {
       box.style.display = "block";
       btn.textContent = "Hide explanation";
@@ -304,19 +506,19 @@
 
     btn.disabled = true;
     btn.textContent = "Asking Gemini...";
-
     try {
       const res = await fetch(`${API}/explain`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ book, user_text: userText, mood }),
       });
+      if (!res.ok) throw new Error("explain failed");
       const data = await res.json();
       box.textContent = "✨ " + data.explanation;
       box.style.display = "block";
       btn.textContent = "Hide explanation";
     } catch {
-      box.textContent = "Could not generate explanation.";
+      box.textContent = "Could not generate explanation right now.";
       box.style.display = "block";
       btn.textContent = "Hide explanation";
     } finally {
@@ -328,6 +530,124 @@
   document.getElementById("mood-input").addEventListener("keydown", e => {
     if (e.key === "Enter") search();
   });
+
+  // ── Lucky pick ──────────────────────────────────────────────
+  let _luckyBook = null;
+
+  function feelingLucky() {
+    // Need results to pick from
+    const cards = document.querySelectorAll(".card");
+    if (!cards.length) {
+      // No results yet — run a search first with current input or a random mood
+      const text = document.getElementById("mood-input").value.trim()
+        || "I'm not sure what I want to read";
+      document.getElementById("mood-input").value = text;
+      search().then(() => _pickLucky());
+      return;
+    }
+    _pickLucky();
+  }
+
+  function _pickLucky() {
+    if (!currentText) return;
+    // Pick a random book from the current result pool via a random offset
+    const randomOffset = Math.floor(Math.random() * 50);
+    fetch(`${API}/recommend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_text: currentText, top_n: 10, offset: randomOffset }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      const books = data.books;
+      if (!books || !books.length) return;
+      _luckyBook = books[Math.floor(Math.random() * books.length)];
+      _showModal(_luckyBook);
+    })
+    .catch(() => {});
+  }
+
+  function _showModal(book) {
+    const stars = Math.round(book.rating);
+    document.getElementById("modal-title").textContent  = book.title;
+    document.getElementById("modal-author").textContent = "by " + book.author;
+    document.getElementById("modal-genre").textContent  = book.genre || "General";
+    document.getElementById("modal-stars").innerHTML    =
+      "★".repeat(Math.min(stars,5)) + "☆".repeat(Math.max(0,5-stars)) +
+      ` <span style="color:#a7a9be;font-size:0.8rem">${book.rating.toFixed(1)}</span>`;
+    document.getElementById("modal-desc").textContent   = book.description;
+    document.getElementById("modal-explain").style.display = "none";
+    document.getElementById("modal-explain").textContent   = "";
+    document.getElementById("modal-explain-btn").textContent = "✨ Why this book?";
+    document.getElementById("modal-explain-btn").disabled   = false;
+
+    const cover = document.getElementById("modal-cover");
+    if (book.thumbnail) {
+      cover.style.backgroundImage = `url('${book.thumbnail}')`;
+      cover.textContent = "";
+    } else {
+      cover.style.backgroundImage = "";
+      cover.textContent = "📖";
+    }
+    document.getElementById("lucky-modal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("lucky-modal").classList.remove("open");
+  }
+
+  async function modalExplain() {
+    if (!_luckyBook) return;
+    const btn = document.getElementById("modal-explain-btn");
+    const box = document.getElementById("modal-explain");
+    if (box.style.display === "block") {
+      box.style.display = "none";
+      btn.textContent = "✨ Why this book?";
+      return;
+    }
+    if (box.textContent) { box.style.display = "block"; return; }
+    btn.disabled = true;
+    btn.textContent = "Asking Gemini...";
+    try {
+      const res = await fetch(`${API}/explain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ book: _luckyBook, user_text: currentText, mood: currentMood }),
+      });
+      const data = await res.json();
+      box.textContent = "✨ " + data.explanation;
+      box.style.display = "block";
+      btn.textContent = "Hide explanation";
+    } catch {
+      box.textContent = "Could not generate explanation.";
+      box.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Close modal on overlay click
+  document.getElementById("lucky-modal").addEventListener("click", e => {
+    if (e.target === document.getElementById("lucky-modal")) closeModal();
+  });
 </script>
 </body>
+
+<!-- Lucky pick modal -->
+<div class="modal-overlay" id="lucky-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-cover" id="modal-cover">📖</div>
+    <div class="modal-title"  id="modal-title"></div>
+    <div class="modal-author" id="modal-author"></div>
+    <div class="modal-genre"  id="modal-genre"></div>
+    <div class="modal-stars"  id="modal-stars"></div>
+    <div class="modal-desc"   id="modal-desc"></div>
+    <div class="modal-explain" id="modal-explain"></div>
+    <div class="modal-actions">
+      <button class="btn-shuffle" id="modal-explain-btn" onclick="modalExplain()">✨ Why this book?</button>
+      <button class="btn-shuffle" onclick="feelingLucky()">🎲 Pick another</button>
+    </div>
+  </div>
+</div>
 </html>
