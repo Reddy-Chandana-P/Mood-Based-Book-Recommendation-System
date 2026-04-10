@@ -35,6 +35,10 @@ MOOD_KEYWORDS: dict[str, list[str]] = {
                     "worried","nervous","burnout","exhausted","panic"],
     "inspired":    ["inspired","creative","moved","uplifted","enlightened",
                     "awakened","purpose","meaning"],
+    "anxious":     ["anxious","anxiety","nervous","worried","overthinking","panic",
+                    "uneasy","restless","tense","on edge","fearful"],
+    "healing":     ["healing","recovering","hurt","broken","grief","loss",
+                    "moving on","getting better","trauma","pain","cope"],
 }
 
 
@@ -77,13 +81,12 @@ def detect_mood(user_text: str) -> str:
     return best if scores[best] > 0 else "curious"
 
 
-def recommend(user_text: str, top_n: int = 6) -> list[dict]:
+def recommend(user_text: str, top_n: int = 10, offset: int = 0) -> list[dict]:
     _init()
 
     mood     = detect_mood(user_text)
     genre_df = get_genre_matches(_df, mood)
 
-    # Guard: if genre filter returns nothing fall back to full df
     if genre_df.empty:
         genre_df = _df
 
@@ -92,23 +95,28 @@ def recommend(user_text: str, top_n: int = 6) -> list[dict]:
     subset_matrix = _tfidf_matrix[indices]
     similarities  = cosine_similarity(user_vec, subset_matrix).flatten()
 
-    # Bayesian average (IMDb-style) — rewards popular high-rated books
-    genre_df = genre_df.copy()
     rc = genre_df["ratings_count"].fillna(0).values.astype(float)
     rt = genre_df["rating"].fillna(0).values.astype(float)
     bayesian = (rc * rt + _bayes_C * _bayes_m) / (rc + _bayes_C + 1e-9)
     max_b    = bayesian.max()
     norm_b   = bayesian / (max_b if max_b > 0 else 1.0)
 
-    # 50% content similarity + 50% bayesian quality
     scores      = 0.50 * similarities + 0.50 * norm_b
-    top_indices = np.argsort(scores)[::-1][:top_n]
+    # Get a large pool (top 60) so shuffle can pick different slices
+    pool_size   = min(60, len(scores))
+    pool_indices = np.argsort(scores)[::-1][:pool_size]
+
+    # Slice the pool by offset
+    start  = offset % pool_size
+    picked = []
+    for i in range(pool_size):
+        picked.append(pool_indices[(start + i) % pool_size])
+        if len(picked) == top_n:
+            break
 
     results = []
-    for i in top_indices:
+    for i in picked:
         row = genre_df.iloc[i]
-
-        # Clean genre: take first 3 space-separated tags, humanise
         genre_raw     = str(row.get("genre", ""))
         genre_display = ", ".join(
             t.strip().replace("-", " ").title()
@@ -116,7 +124,6 @@ def recommend(user_text: str, top_n: int = 6) -> list[dict]:
             if t.strip()
         ) or "General"
 
-        # Safe thumbnail — skip obviously broken values
         thumb = str(row.get("thumbnail", "")).strip()
         if thumb in ("nan", "None", ""):
             thumb = ""

@@ -26,12 +26,8 @@ app.add_middleware(
 
 class RecommendRequest(BaseModel):
     user_text: str
-    top_n: int = 6
-
-class ExplainRequest(BaseModel):
-    book: dict
-    user_text: str
-    mood: str
+    top_n: int = 10
+    offset: int = 0
 
 @app.get("/health")
 def health():
@@ -42,7 +38,7 @@ def get_recommendations(req: RecommendRequest):
     if not req.user_text.strip():
         raise HTTPException(status_code=400, detail="user_text cannot be empty")
     try:
-        books = recommend(req.user_text, req.top_n)
+        books = recommend(req.user_text, req.top_n, req.offset)
         return {"mood": books[0]["mood"] if books else "unknown", "books": books}
     except Exception as e:
         traceback.print_exc()

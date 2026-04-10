@@ -32,6 +32,10 @@ MOOD_GENRE_MAP = {
                     "humor","mental-health","psychology"],
     "inspired":    ["biography","autobiography","inspirational","spirituality","philosophy",
                     "self-help","true-story","leadership","art"],
+    "anxious":     ["mindfulness","meditation","self-help","mental-health","psychology",
+                    "wellness","anxiety","calm","cozy","humor","light-fiction","poetry"],
+    "healing":     ["memoir","self-help","inspirational","poetry","grief","mental-health",
+                    "wellness","personal-development","spirituality","healing","recovery"],
 }
 
 _REQUIRED = ["title","author","genre","description","rating","ratings_count","thumbnail"]
@@ -150,6 +154,16 @@ def load_books() -> pd.DataFrame:
     except Exception as e:
         print(f"  CMU failed: {e}")
 
+    # Google Books — fetch per mood category
+    try:
+        from google_books import fetch_google_books
+        print("  → Google Books API ...")
+        gbooks = fetch_google_books()
+        if not gbooks.empty:
+            frames.append(_normalise(gbooks))
+    except Exception as e:
+        print(f"  Google Books failed: {e}")
+
     if not frames:
         raise RuntimeError("All data sources failed. Check your internet connection.")
 
@@ -163,8 +177,8 @@ def load_books() -> pd.DataFrame:
         ". Genre: " + df.loc[short, "genre"]
     )
 
-    # Deduplicate
-    df = df.drop_duplicates(subset=["title","author"]).reset_index(drop=True)
+    # Deduplicate by title + author
+    df = df.drop_duplicates(subset=["title", "author"]).reset_index(drop=True)
     print(f"✅ Total unique books: {len(df)}")
 
     with open(CACHE_PATH, "wb") as f:
