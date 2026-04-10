@@ -1,18 +1,19 @@
 import os
+import logging
+import traceback
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-
-import logging
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from recommender import recommend, detect_mood
 from gemini_explainer import explain_recommendation
-import os
+
+FRONTEND_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
 
 app = FastAPI(title="Book Recommender API")
 
@@ -22,8 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-FRONTEND_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
 class RecommendRequest(BaseModel):
     user_text: str
@@ -46,14 +45,17 @@ def get_recommendations(req: RecommendRequest):
         books = recommend(req.user_text, req.top_n)
         return {"mood": books[0]["mood"] if books else "unknown", "books": books}
     except Exception as e:
-        import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/explain")
 def get_explanation(req: ExplainRequest):
-    explanation = explain_recommendation(req.book, req.user_text, req.mood)
-    return {"explanation": explanation}
+    try:
+        explanation = explain_recommendation(req.book, req.user_text, req.mood)
+        return {"explanation": explanation}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/moods")
 def get_moods():
@@ -62,10 +64,13 @@ def get_moods():
 
 @app.get("/")
 def serve_frontend():
-    return FileResponse(os.path.join(FRONTEND_PATH, "index.html"))
+    index = os.path.join(FRONTEND_PATH, "index.html")
+    if not os.path.exists(index):
+        return {"error": f"index.html not found at {index}"}
+    return FileResponse(index)
 
 if __name__ == "__main__":
     import uvicorn
     print("\n📚 Book Recommender API")
     print("   Running at http://localhost:8000\n")
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="warning")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
