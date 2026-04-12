@@ -57,33 +57,43 @@ def _normalise(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _load_goodbooks() -> pd.DataFrame:
-    print("  → goodbooks-10k ...")
-    books     = pd.read_csv("https://raw.githubusercontent.com/zygmuntz/goodbooks-10k/master/books.csv")
-    tags_df   = pd.read_csv("https://raw.githubusercontent.com/zygmuntz/goodbooks-10k/master/book_tags.csv")
-    tag_names = pd.read_csv("https://raw.githubusercontent.com/zygmuntz/goodbooks-10k/master/tags.csv")
+    """goodbooks-10k-extended — 10k books with real descriptions + genre lists."""
+    print("  → goodbooks-10k-extended ...")
+    # This version has real descriptions and genre arrays already merged in
+    url = "https://raw.githubusercontent.com/malcolmosh/goodbooks-10k-extended/master/books_enriched.csv"
+    df  = pd.read_csv(url)
 
-    merged   = tags_df.merge(tag_names, on="tag_id")
-    top_tags = (
-        merged.sort_values("count", ascending=False)
-        .groupby("goodreads_book_id").head(5)
-        .groupby("goodreads_book_id")["tag_name"]
-        .apply(lambda x: " ".join(x))
-        .reset_index().rename(columns={"tag_name": "genre"})
-    )
-    books = books.merge(top_tags, on="goodreads_book_id", how="left")
-    books = books.rename(columns={
+    df = df.rename(columns={
         "average_rating": "rating",
         "authors":        "author",
         "image_url":      "thumbnail",
+        "genres":         "genre",
     })
-    year = pd.to_numeric(books.get("original_publication_year"), errors="coerce")
-    books["description"] = (
-        '"' + books["title"].fillna("") + '" by ' + books["author"].fillna("") +
-        ". Tags: " + books["genre"].fillna("fiction") +
-        year.apply(lambda y: f". Year: {int(y)}" if pd.notna(y) else "")
+
+    # Parse genre from stringified list e.g. "['fantasy', 'fiction']"
+    import ast
+    def parse_genre(g):
+        try:
+            lst = ast.literal_eval(g) if isinstance(g, str) else []
+            return " ".join(lst[:5]).lower()
+        except Exception:
+            return str(g).lower()
+
+    df["genre"] = df["genre"].apply(parse_genre)
+
+    year = pd.to_numeric(df.get("original_publication_year"), errors="coerce")
+    df["description"] = df["description"].fillna("")
+    # Enrich short descriptions
+    short = df["description"].str.len() < 30
+    df.loc[short, "description"] = (
+        '"' + df.loc[short, "title"].fillna("") + '" by ' +
+        df.loc[short, "author"].fillna("") +
+        ". Genre: " + df.loc[short, "genre"]
     )
-    print(f"     loaded {len(books)} books")
-    return _normalise(books)
+
+    df["ratings_count"] = pd.to_numeric(df.get("ratings_count", 0), errors="coerce").fillna(0)
+    print(f"     loaded {len(df)} books")
+    return _normalise(df)
 
 
 def _load_cmu() -> pd.DataFrame:
@@ -137,7 +147,7 @@ def load_books() -> pd.DataFrame:
         with open(CACHE_PATH, "rb") as f:
             return pickle.load(f)
 
-    print("📥 Building dataset from multiple sources...")
+    print("📥 Loading books dataset...")
     frames = []
 
     try:
@@ -145,41 +155,30 @@ def load_books() -> pd.DataFrame:
         if not gb.empty:
             frames.append(gb)
     except Exception as e:
-        print(f"  goodbooks failed: {e}")
+        raise RuntimeError(f"Failed to load goodbooks dataset: {e}")
 
-    try:
-        cmu = _load_cmu()
-        if not cmu.empty:
-            frames.append(cmu)
-    except Exception as e:
-        print(f"  CMU failed: {e}")
-
-    # Google Books — fetch per mood category
+    # Quick Google Books top-up — 10 queries, ~400 books, ~15 seconds
     try:
         from google_books import fetch_google_books
-        print("  → Google Books API ...")
-        gbooks = fetch_google_books()
+        print("  → Google Books top-up (10 queries)...")
+        TOP_UP_MOODS = ["adventurous", "romantic", "curious", "scared", "motivated"]
+        gbooks = fetch_google_books(moods=TOP_UP_MOODS)
         if not gbooks.empty:
             frames.append(_normalise(gbooks))
     except Exception as e:
-        print(f"  Google Books failed: {e}")
-
-    if not frames:
-        raise RuntimeError("All data sources failed. Check your internet connection.")
+        print(f"  Google Books skipped: {e}")
 
     df = pd.concat(frames, ignore_index=True)
     df = _normalise(df)
 
-    # Fill short/missing descriptions
     short = df["description"].str.len() < 20
     df.loc[short, "description"] = (
         '"' + df.loc[short, "title"] + '" by ' + df.loc[short, "author"] +
         ". Genre: " + df.loc[short, "genre"]
     )
 
-    # Deduplicate by title + author
     df = df.drop_duplicates(subset=["title", "author"]).reset_index(drop=True)
-    print(f"✅ Total unique books: {len(df)}")
+    print(f"✅ Total books: {len(df)}")
 
     with open(CACHE_PATH, "wb") as f:
         pickle.dump(df, f)

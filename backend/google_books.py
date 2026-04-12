@@ -7,20 +7,20 @@ GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes"
 
 # One search query per mood — tuned for best results
 MOOD_QUERIES = {
-    "happy":       ["funny fiction", "feel good novel", "comedy books", "heartwarming stories"],
-    "sad":         ["emotional memoir", "grief poetry", "inspirational self help", "healing books"],
-    "adventurous": ["epic fantasy adventure", "science fiction space", "dystopian thriller", "survival fiction"],
-    "romantic":    ["romance novel", "love story fiction", "historical romance", "contemporary romance"],
-    "curious":     ["popular science", "history nonfiction", "philosophy books", "biography famous"],
-    "scared":      ["horror fiction", "psychological thriller", "mystery suspense", "gothic novel"],
-    "nostalgic":   ["classic literature", "historical fiction", "coming of age", "war novel"],
-    "motivated":   ["self help success", "business leadership", "biography entrepreneur", "productivity"],
-    "bored":       ["page turner thriller", "action adventure fiction", "mystery crime", "graphic novel"],
-    "relaxed":     ["cozy mystery", "travel memoir", "nature writing", "short stories collection"],
-    "stressed":    ["mindfulness meditation", "self help anxiety", "cozy fiction", "humor essays"],
-    "inspired":    ["inspirational biography", "spiritual philosophy", "true story triumph", "art creativity"],
-    "anxious":     ["anxiety self help", "mindfulness calm", "cozy comfort read", "humor light fiction"],
-    "healing":     ["grief healing memoir", "recovery self help", "inspirational true story", "poetry healing"],
+    "happy":       ["funny fiction", "feel good novel"],
+    "sad":         ["emotional memoir", "inspirational self help"],
+    "adventurous": ["epic fantasy adventure", "science fiction space"],
+    "romantic":    ["romance novel", "historical romance"],
+    "curious":     ["popular science", "history nonfiction"],
+    "scared":      ["horror fiction", "psychological thriller"],
+    "nostalgic":   ["classic literature", "historical fiction"],
+    "motivated":   ["self help success", "biography entrepreneur"],
+    "bored":       ["page turner thriller", "action adventure fiction"],
+    "relaxed":     ["cozy mystery", "travel memoir"],
+    "stressed":    ["mindfulness meditation", "self help anxiety"],
+    "inspired":    ["inspirational biography", "spiritual philosophy"],
+    "anxious":     ["anxiety self help", "mindfulness calm"],
+    "healing":     ["grief healing memoir", "recovery self help"],
 }
 
 MAX_PER_QUERY = 40   # Google Books returns max 40 per request
