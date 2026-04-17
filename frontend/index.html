@@ -8,6 +8,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { font-size: 17px; }
+
     /* ── Palette ──────────────────────────────────────────────
        --bg:        #fdf0f3  pale blush pink background
        --surface:   #fff5f7  card / panel surface
@@ -233,6 +235,114 @@
     .btn-explain:hover { background: var(--surface2); border-color: var(--accent); }
     .btn-explain:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ── Card action row ── */
+    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-read, .btn-skip {
+      flex: 1;
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.75rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      transition: all 0.2s;
+    }
+    .btn-read  { background: #f0faf4; color: #2e7d52; border-color: #b2dfcc; }
+    .btn-read:hover  { background: #d6f5e3; }
+    .btn-skip  { background: #fff5f5; color: #c0392b; border-color: #f5c0c0; }
+    .btn-skip:hover  { background: #fde8e8; }
+    .btn-read.done, .btn-skip.done { opacity: 0.45; cursor: default; }
+
+    /* ── History panel ── */
+    .history-toggle {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(180,80,100,0.3);
+      z-index: 50;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .history-toggle:hover { background: var(--accent2); transform: translateY(-2px); }
+
+    .history-panel {
+      display: none;
+      position: fixed;
+      bottom: 5rem; right: 1.5rem;
+      width: 320px;
+      max-height: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(180,80,100,0.15);
+      z-index: 50;
+      overflow: hidden;
+      flex-direction: column;
+      animation: popIn 0.2s ease;
+    }
+    .history-panel.open { display: flex; }
+    .history-header {
+      padding: 1rem 1.2rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .history-header h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+    .btn-clear-history {
+      background: none; border: none;
+      color: var(--muted); font-size: 0.75rem;
+      cursor: pointer; font-family: inherit;
+      transition: color 0.2s;
+    }
+    .btn-clear-history:hover { color: #c0392b; }
+    .history-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .history-tab {
+      flex: 1; padding: 0.5rem;
+      font-size: 0.8rem; font-family: inherit;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .history-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .history-list {
+      overflow-y: auto; flex: 1; padding: 0.75rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .history-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.5rem 0.6rem;
+      background: var(--surface2);
+      border-radius: 8px; font-size: 0.8rem;
+    }
+    .history-item-cover {
+      width: 32px; height: 40px; border-radius: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--mauve));
+      flex-shrink: 0; background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .history-item-info { flex: 1; min-width: 0; }
+    .history-item-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item-author { color: var(--muted); font-size: 0.73rem; }
+    .btn-remove-history {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 0.85rem; flex-shrink: 0;
+      transition: color 0.2s;
+    }
+    .btn-remove-history:hover { color: #c0392b; }
+    .history-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1.5rem 0; }
+
     /* ── Section title ── */
     .section-title {
       font-size: 1.15rem; font-weight: 600;
@@ -366,7 +476,7 @@
     { label: "🌍 Adventurous", value: "I want something adventurous and exciting" },
     { label: "💕 Romantic",    value: "I'm in a romantic mood" },
     { label: "🔍 Curious",     value: "I'm curious and want to learn something new" },
-    { label: "😱 Thrilled",    value: "I want something scary and thrilling" },
+    { label: "😱 Thrilled",    value: "I want something scary and full of horror and suspense" },
     { label: "💪 Motivated",   value: "I need motivation and inspiration" },
     { label: "😌 Relaxed",     value: "I want something light and relaxing" },
     { label: "😰 Anxious",     value: "I'm feeling anxious and overwhelmed" },
@@ -442,6 +552,7 @@
 
       data.books.forEach(book => renderCard(book, text, data.mood));
       document.getElementById("shuffle-row").style.display = "flex";
+      applyHistoryToCards();
     } catch (e) {
       document.getElementById("error").textContent =
         "Error: " + (e.message || "Unknown error. Check console (F12) for details.");
@@ -474,11 +585,21 @@
         <p class="card-desc">${escHtml(book.description)}</p>
         <div class="explain-box" id="exp-${cardId}"></div>
         <button class="btn-explain" id="btn-${cardId}">✨ Why this book?</button>
+        <div class="card-actions">
+          <button class="btn-read" id="read-${cardId}">✓ Read</button>
+          <button class="btn-skip" id="skip-${cardId}">✗ Not interested</button>
+        </div>
       </div>
     `;
 
     card.querySelector(`#btn-${cardId}`).addEventListener("click", () =>
       explain(cardId, book, userText, mood)
+    );
+    card.querySelector(`#read-${cardId}`).addEventListener("click", () =>
+      markBook(cardId, book, "read")
+    );
+    card.querySelector(`#skip-${cardId}`).addEventListener("click", () =>
+      markBook(cardId, book, "skip")
     );
     document.getElementById("grid").appendChild(card);
   }
@@ -630,8 +751,119 @@
   document.getElementById("lucky-modal").addEventListener("click", e => {
     if (e.target === document.getElementById("lucky-modal")) closeModal();
   });
+
+  // ── Reading History ─────────────────────────────────────────
+  const HISTORY_KEY = "bookHistory";
+  let _historyTab = "read";
+
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || { read: [], skip: [] }; }
+    catch { return { read: [], skip: [] }; }
+  }
+
+  function saveHistory(h) {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  }
+
+  function isInHistory(title, author) {
+    const h = getHistory();
+    return [...h.read, ...h.skip].some(b => b.title === title && b.author === author);
+  }
+
+  function markBook(cardId, book, type) {
+    const h = getHistory();
+    if (!h[type].some(b => b.title === book.title && b.author === book.author)) {
+      h[type].push({ title: book.title, author: book.author, thumbnail: book.thumbnail, genre: book.genre });
+      saveHistory(h);
+    }
+    // Dim the card
+    const readBtn = document.getElementById("read-" + cardId);
+    const skipBtn = document.getElementById("skip-" + cardId);
+    if (readBtn) { readBtn.classList.add("done"); readBtn.disabled = true; }
+    if (skipBtn) { skipBtn.classList.add("done"); skipBtn.disabled = true; }
+    const card = readBtn?.closest(".card");
+    if (card) card.style.opacity = "0.45";
+    renderHistoryList();
+  }
+
+  function toggleHistory() {
+    const panel = document.getElementById("history-panel");
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open")) renderHistoryList();
+  }
+
+  function switchHistoryTab(tab) {
+    _historyTab = tab;
+    document.querySelectorAll(".history-tab").forEach(t => {
+      t.classList.toggle("active", t.dataset.tab === tab);
+    });
+    renderHistoryList();
+  }
+
+  function renderHistoryList() {
+    const h = getHistory();
+    const list = document.getElementById("history-list");
+    const items = h[_historyTab] || [];
+    if (!items.length) {
+      list.innerHTML = `<div class="history-empty">Nothing here yet</div>`;
+      return;
+    }
+    list.innerHTML = items.slice().reverse().map((b, i) => `
+      <div class="history-item">
+        <div class="history-item-cover" ${b.thumbnail ? `style="background-image:url('${b.thumbnail}')"` : ""}>
+          ${b.thumbnail ? "" : "📖"}
+        </div>
+        <div class="history-item-info">
+          <div class="history-item-title">${escHtml(b.title)}</div>
+          <div class="history-item-author">${escHtml(b.author)}</div>
+        </div>
+        <button class="btn-remove-history" onclick="removeFromHistory('${_historyTab}', ${items.length - 1 - i})">✕</button>
+      </div>
+    `).join("");
+  }
+
+  function removeFromHistory(type, idx) {
+    const h = getHistory();
+    h[type].splice(idx, 1);
+    saveHistory(h);
+    renderHistoryList();
+  }
+
+  function clearHistory() {
+    const h = getHistory();
+    h[_historyTab] = [];
+    saveHistory(h);
+    renderHistoryList();
+  }
+
+  // On page load, mark already-read books when cards render
+  function applyHistoryToCards() {
+    const h = getHistory();
+    const all = [...h.read, ...h.skip];
+    document.querySelectorAll(".card").forEach(card => {
+      const title  = card.querySelector(".card-title")?.textContent;
+      const author = card.querySelector(".card-author")?.textContent;
+      if (all.some(b => b.title === title && b.author === author)) {
+        card.style.opacity = "0.45";
+      }
+    });
+  }
 </script>
 </body>
+
+<!-- History panel -->
+<button class="history-toggle" onclick="toggleHistory()">📚 History</button>
+<div class="history-panel" id="history-panel">
+  <div class="history-header">
+    <h3>Reading History</h3>
+    <button class="btn-clear-history" onclick="clearHistory()">Clear all</button>
+  </div>
+  <div class="history-tabs">
+    <button class="history-tab active" data-tab="read" onclick="switchHistoryTab('read')">Read</button>
+    <button class="history-tab" data-tab="skip" onclick="switchHistoryTab('skip')">Not interested</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
 
 <!-- Lucky pick modal -->
 <div class="modal-overlay" id="lucky-modal">
