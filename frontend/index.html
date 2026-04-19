@@ -388,6 +388,96 @@
     .btn-remove-history:hover { color: #c0392b; }
     .history-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1.5rem 0; }
 
+    /* ── Mood Calendar ── */
+    .mood-calendar-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      box-shadow: 0 2px 12px rgba(180,80,100,0.06);
+    }
+    .mood-calendar-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+    .mood-calendar-header h2 {
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--text);
+      font-family: 'Playfair Display', serif;
+    }
+    .cal-nav { display: flex; align-items: center; gap: 0.75rem; }
+    .cal-nav button {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.3rem 0.7rem;
+      cursor: pointer; font-size: 0.9rem; color: var(--text);
+      transition: background 0.2s;
+    }
+    .cal-nav button:hover { background: var(--border); }
+    .cal-nav span { font-size: 0.9rem; font-weight: 600; color: var(--text); min-width: 110px; text-align: center; }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day-label {
+      text-align: center; font-size: 0.7rem;
+      font-weight: 600; color: var(--muted);
+      padding: 0.3rem 0;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 500;
+      color: var(--muted);
+      cursor: default;
+      position: relative;
+      transition: transform 0.15s;
+    }
+    .cal-day.has-mood {
+      color: #fff;
+      border-color: transparent;
+      cursor: pointer;
+    }
+    .cal-day.has-mood:hover { transform: scale(1.12); z-index: 1; }
+    .cal-day.today { box-shadow: 0 0 0 2px var(--accent); }
+    .cal-day.empty { background: transparent; border-color: transparent; }
+
+    .cal-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%; transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .cal-day.has-mood:hover .cal-tooltip { display: block; }
+
+    .mood-legend {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.75rem; color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
     /* ── Section title ── */
     .section-title {
       font-size: 1.15rem; font-weight: 600;
@@ -507,6 +597,20 @@
     <button class="btn-shuffle" id="lucky-btn" onclick="feelingLucky()">🎲 Just pick one for me</button>
   </div>
   <div class="grid" id="grid"></div>
+
+  <!-- Mood Calendar -->
+  <div class="mood-calendar-section" id="mood-calendar-section">
+    <div class="mood-calendar-header">
+      <h2>📅 Mood Journal</h2>
+      <div class="cal-nav">
+        <button onclick="calPrev()">‹</button>
+        <span id="cal-month-label"></span>
+        <button onclick="calNext()">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="mood-legend" id="mood-legend"></div>
+  </div>
 </div>
 
 <script>
@@ -589,6 +693,7 @@
       }
       const data = await res.json();
       currentMood = data.mood;
+      saveMoodForToday(data.mood);
 
       document.getElementById("mood-label").innerHTML =
         `Detected mood: <span>${data.mood}</span>`;
@@ -872,7 +977,119 @@
       panel.classList.remove("open");
     }
   });
-  // ── Reading History ─────────────────────────────────────────
+  // ── Mood Calendar ───────────────────────────────────────────
+  const MOOD_COLORS = {
+    happy:       "#f9c74f",
+    sad:         "#577590",
+    adventurous: "#43aa8b",
+    romantic:    "#f3722c",
+    curious:     "#4d908e",
+    scared:      "#6d2b3d",
+    nostalgic:   "#a98467",
+    motivated:   "#f94144",
+    bored:       "#90be6d",
+    relaxed:     "#74c69d",
+    stressed:    "#9b5de5",
+    inspired:    "#f15bb5",
+    anxious:     "#7b2d8b",
+    healing:     "#52b788",
+  };
+
+  const MOOD_JOURNAL_KEY = "moodJournal"; // { "2025-04-19": "happy", ... }
+  let _calYear, _calMonth;
+
+  function getMoodJournal() {
+    try { return JSON.parse(localStorage.getItem(MOOD_JOURNAL_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveMoodForToday(mood) {
+    const j = getMoodJournal();
+    const key = new Date().toISOString().slice(0, 10);
+    j[key] = mood;
+    localStorage.setItem(MOOD_JOURNAL_KEY, JSON.stringify(j));
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const now = new Date();
+    if (_calYear === undefined) { _calYear = now.getFullYear(); _calMonth = now.getMonth(); }
+
+    const journal = getMoodJournal();
+    const label   = new Date(_calYear, _calMonth, 1)
+      .toLocaleString("default", { month: "long", year: "numeric" });
+    document.getElementById("cal-month-label").textContent = label;
+
+    const grid = document.getElementById("cal-grid");
+    grid.innerHTML = "";
+
+    // Day labels
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d => {
+      const el = document.createElement("div");
+      el.className = "cal-day-label";
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay  = new Date(_calYear, _calMonth, 1).getDay();
+    const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+    const todayStr  = now.toISOString().slice(0, 10);
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      const el = document.createElement("div");
+      el.className = "cal-day empty";
+      grid.appendChild(el);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${_calYear}-${String(_calMonth + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const mood    = journal[dateStr];
+      const el      = document.createElement("div");
+      el.className  = "cal-day" + (mood ? " has-mood" : "") + (dateStr === todayStr ? " today" : "");
+      el.textContent = d;
+
+      if (mood && MOOD_COLORS[mood]) {
+        el.style.background = MOOD_COLORS[mood];
+        const tip = document.createElement("div");
+        tip.className = "cal-tooltip";
+        tip.textContent = mood.charAt(0).toUpperCase() + mood.slice(1);
+        el.appendChild(tip);
+      }
+      grid.appendChild(el);
+    }
+
+    // Legend — only show moods that appear in this month
+    const legend = document.getElementById("mood-legend");
+    const usedMoods = new Set(
+      Object.entries(journal)
+        .filter(([k]) => k.startsWith(`${_calYear}-${String(_calMonth+1).padStart(2,"0")}`))
+        .map(([,v]) => v)
+    );
+    legend.innerHTML = [...usedMoods].map(m => `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${MOOD_COLORS[m] || "#ccc"}"></div>
+        ${m.charAt(0).toUpperCase() + m.slice(1)}
+      </div>`).join("");
+    if (!usedMoods.size) {
+      legend.innerHTML = `<span style="font-size:0.78rem;color:var(--muted)">No moods logged this month yet — search for books to start!</span>`;
+    }
+  }
+
+  function calPrev() {
+    _calMonth--;
+    if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+    renderCalendar();
+  }
+
+  function calNext() {
+    _calMonth++;
+    if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+    renderCalendar();
+  }
+
+  // Init calendar on load
+  document.addEventListener("DOMContentLoaded", renderCalendar);
   const HISTORY_KEY = "bookHistory";
   let _historyTab = "read";
 
