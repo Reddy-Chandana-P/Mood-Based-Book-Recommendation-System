@@ -872,6 +872,7 @@
       panel.classList.remove("open");
     }
   });
+  // ── Reading History ─────────────────────────────────────────
   const HISTORY_KEY = "bookHistory";
   let _historyTab = "read";
 
@@ -884,25 +885,27 @@
     localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
   }
 
-  function isInHistory(title, author) {
-    const h = getHistory();
-    return [...h.read, ...h.skip].some(b => b.title === title && b.author === author);
-  }
-
   function markBook(cardId, book, type) {
     const h = getHistory();
+    // Avoid duplicates
     if (!h[type].some(b => b.title === book.title && b.author === book.author)) {
-      h[type].push({ title: book.title, author: book.author, thumbnail: book.thumbnail, genre: book.genre });
+      h[type].push({
+        title: book.title, author: book.author,
+        thumbnail: book.thumbnail || "", genre: book.genre || ""
+      });
       saveHistory(h);
     }
-    // Dim the card
+    // Dim both buttons and the card
     const readBtn = document.getElementById("read-" + cardId);
     const skipBtn = document.getElementById("skip-" + cardId);
     if (readBtn) { readBtn.classList.add("done"); readBtn.disabled = true; }
     if (skipBtn) { skipBtn.classList.add("done"); skipBtn.disabled = true; }
     const card = readBtn?.closest(".card");
     if (card) card.style.opacity = "0.45";
-    renderHistoryList();
+    // Refresh panel if open
+    if (document.getElementById("history-panel").classList.contains("open")) {
+      renderHistoryList();
+    }
   }
 
   function toggleHistory() {
@@ -913,39 +916,45 @@
 
   function switchHistoryTab(tab) {
     _historyTab = tab;
-    document.querySelectorAll(".history-tab").forEach(t => {
-      t.classList.toggle("active", t.dataset.tab === tab);
-    });
+    document.querySelectorAll(".history-tab").forEach(t =>
+      t.classList.toggle("active", t.dataset.tab === tab)
+    );
     renderHistoryList();
   }
 
   function renderHistoryList() {
     const h = getHistory();
     const list = document.getElementById("history-list");
+    if (!list) return;
     const items = h[_historyTab] || [];
     if (!items.length) {
       list.innerHTML = `<div class="history-empty">Nothing here yet</div>`;
       return;
     }
-    list.innerHTML = items.slice().reverse().map((b, i) => `
-      <div class="history-item">
-        <div class="history-item-cover" ${b.thumbnail ? `style="background-image:url('${b.thumbnail}')"` : ""}>
-          ${b.thumbnail ? "" : "📖"}
-        </div>
-        <div class="history-item-info">
-          <div class="history-item-title">${escHtml(b.title)}</div>
-          <div class="history-item-author">${escHtml(b.author)}</div>
-        </div>
-        <button class="btn-remove-history" onclick="removeFromHistory('${_historyTab}', ${items.length - 1 - i})">✕</button>
-      </div>
-    `).join("");
+    // Show newest first — use original index for removal (not reversed index)
+    list.innerHTML = items.slice().reverse().map((b, reversedIdx) => {
+      const originalIdx = items.length - 1 - reversedIdx;
+      return `
+        <div class="history-item">
+          <div class="history-item-cover" ${b.thumbnail ? `style="background-image:url('${b.thumbnail}')"` : ""}>
+            ${b.thumbnail ? "" : "📖"}
+          </div>
+          <div class="history-item-info">
+            <div class="history-item-title">${escHtml(b.title)}</div>
+            <div class="history-item-author">${escHtml(b.author)}</div>
+          </div>
+          <button class="btn-remove-history" onclick="removeFromHistory('${_historyTab}', ${originalIdx})">✕</button>
+        </div>`;
+    }).join("");
   }
 
   function removeFromHistory(type, idx) {
     const h = getHistory();
-    h[type].splice(idx, 1);
-    saveHistory(h);
-    renderHistoryList();
+    if (h[type] && idx >= 0 && idx < h[type].length) {
+      h[type].splice(idx, 1);
+      saveHistory(h);
+      renderHistoryList();
+    }
   }
 
   function clearHistory() {
@@ -955,15 +964,18 @@
     renderHistoryList();
   }
 
-  // On page load, mark already-read books when cards render
   function applyHistoryToCards() {
     const h = getHistory();
     const all = [...h.read, ...h.skip];
     document.querySelectorAll(".card").forEach(card => {
-      const title  = card.querySelector(".card-title")?.textContent;
-      const author = card.querySelector(".card-author")?.textContent;
+      const title  = card.querySelector(".card-title")?.textContent?.trim();
+      const author = card.querySelector(".card-author")?.textContent?.trim();
       if (all.some(b => b.title === title && b.author === author)) {
         card.style.opacity = "0.45";
+        card.querySelectorAll(".btn-read, .btn-skip").forEach(btn => {
+          btn.classList.add("done");
+          btn.disabled = true;
+        });
       }
     });
   }
