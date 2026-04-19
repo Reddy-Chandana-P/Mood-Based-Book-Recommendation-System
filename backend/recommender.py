@@ -26,18 +26,21 @@ MOOD_KEYWORDS: dict[str, list[str]] = {
                     "thrilling","thriller","scary","suspense","terrifying"],
     "motivated":   ["motivated","inspire","goal","success","achieve","hustle",
                     "ambition","driven","focus","grind","productive","grow"],
-    "relaxed":     ["relax","calm","peaceful","chill","stress","tired",
+    "relaxed":     ["relax","calm","peaceful","chill","tired",
                     "unwind","quiet","cozy","lazy","slow","breathe","rest"],
     "bored":       ["bored","nothing","idle","dull","monotonous","restless",
                     "stuck","uninspired","flat"],
     "nostalgic":   ["nostalgic","memories","past","childhood","remember",
                     "old","vintage","classic","miss"],
-    "stressed":    ["stressed","anxious","overwhelmed","pressure","tense",
-                    "worried","nervous","burnout","exhausted","panic"],
+    "stressed":    ["stressed","stress","anxious","overwhelmed","pressure","tense",
+                    "worried","nervous","burnout","exhausted","panic",
+                    "grip","emotions","emotional","cant cope","falling apart",
+                    "too much","breaking","struggling","not okay","dont know",
+                    "i dont know","feeling lost","out of control","mess"],
     "inspired":    ["inspired","creative","moved","uplifted","enlightened",
                     "awakened","purpose","meaning"],
     "anxious":     ["anxious","anxiety","nervous","worried","overthinking","panic",
-                    "uneasy","restless","tense","on edge","fearful"],
+                    "uneasy","on edge","fearful","spiraling","racing thoughts"],
     "healing":     ["healing","recovering","hurt","broken","grief","loss",
                     "moving on","getting better","trauma","pain","cope"],
 }
@@ -79,7 +82,7 @@ def detect_mood(user_text: str) -> str:
         for mood, kws in MOOD_KEYWORDS.items()
     }
     best = max(scores, key=scores.get)
-    return best if scores[best] > 0 else "curious"
+    return best if scores[best] > 0 else "stressed"
 
 
 def recommend(user_text: str, top_n: int = 10, offset: int = 0) -> list[dict]:
