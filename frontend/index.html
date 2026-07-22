@@ -609,6 +609,7 @@
   <div id="shuffle-row" style="display:none; margin-top:1.2rem; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
     <button class="btn-shuffle" id="shuffle-btn" onclick="shuffle()">🔀 Show different books</button>
     <button class="btn-shuffle" id="lucky-btn" onclick="feelingLucky()">🎲 Just pick one for me</button>
+    <button class="btn-shuffle" onclick="goHome()">🏠 Back to home</button>
   </div>
   <div class="grid" id="grid"></div>
 </div>
@@ -656,7 +657,18 @@
     chipsEl.appendChild(btn);
   });
 
-  async function search() {
+  function goHome() {
+    document.getElementById("grid").innerHTML = "";
+    document.getElementById("mood-label").innerHTML = "";
+    document.getElementById("results-title").innerHTML = "";
+    document.getElementById("shuffle-row").style.display = "none";
+    document.getElementById("error").textContent = "";
+    document.getElementById("mood-input").value = "";
+    document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+    currentText = ""; currentMood = ""; currentOffset = 0;
+    document.getElementById("mood-calendar-section").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
     const text = document.getElementById("mood-input").value.trim();
     if (!text) return;
     currentText   = text;
