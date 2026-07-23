@@ -388,7 +388,15 @@
     .btn-remove-history:hover { color: #c0392b; }
     .history-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1.5rem 0; }
 
-    /* ── Mood Calendar ── */
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state .empty-emoji { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+    .empty-state p  { font-size: 0.88rem; line-height: 1.6; max-width: 320px; margin: 0 auto; }
     .mood-calendar-section {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -714,7 +722,15 @@
         `<p class="section-title">Recommended for you</p>`;
 
       data.books.forEach(book => renderCard(book, text, data.mood));
-      document.getElementById("shuffle-row").style.display = "flex";
+      if (data.books.length === 0) {
+        document.getElementById("grid").innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-emoji">📭</div>
+            <h3>No books found for this mood</h3>
+            <p>Try describing your feeling differently, or pick one of the mood chips above — we'll find something for you.</p>
+          </div>`;
+      }
+      document.getElementById("shuffle-row").style.display = data.books.length ? "flex" : "none";
       applyHistoryToCards();
     } catch (e) {
       document.getElementById("error").textContent =
